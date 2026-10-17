@@ -143,18 +143,37 @@ def embed_text(text: str) -> list[float]: ...
   - Hardware acceleration automatically engages CUDA when `torch.cuda.is_available()` is true; falls back to CPU otherwise.
   - Loads with `local_files_only=True` after first download to eliminate unnecessary external network requests and prevent httpx connection drops during server reloads.
 
-### 4.5 Vector Store Operations (`backend/vector_store.py`)
-- Manages persistent ChromaDB client at `./chroma_db` with collection `epc_documents`.
-- `add_chunks(chunks)`: Embeds chunk texts and persists them with IDs and metadata (`filename`, `filetype`, `doc_type`, `document_type`, `document_id`).
-- `search(query, n_results=5, filter_document_type=None)`: Performs vector similarity search, optionally filtered by `document_type`.
-- `list_documents()`: Groups chunks by `document_id` to report document inventory and chunk counts.
-- `delete_document(document_id)`: Removes all chunks associated with a specific document from ChromaDB.
+### 4.5 Vector Store & 1-Summary-Chunk Metadata Routing (`backend/vector_store.py`)
+- Manages persistent ChromaDB client at `backend/chroma_db` with collection `epc_documents`.
+- **1 Summary Chunk + Metadata Linking (Zero Bloat)**:
+  - **`generate_doc_summary_and_anchor(first_chunks, filename)`**:
+    - Samples the first 4–5 chunks of each document (~3500 chars).
+    - Prompts local Ollama (`qwen2.5:3b`) with JSON output formatting to generate:
+      1. `doc_anchor`: A tiny 5–8 word identity label stating entity name and document type (e.g., `"Shubham Saini - B.Tech CSE Resume"`).
+      2. `summary`: A dense 60–80 word summary covering full name, role, institution, and key skills/parameters.
+    - Includes a built-in deterministic fallback for offline/timeout resilience.
+  - **$N$ Contextualized Content Chunks**:
+    - Prepends `[{doc_anchor}]\n{chunk_text}` to each content chunk (~30 bytes overhead) so embeddings and LLMs know the exact owner without bloating context.
+    - Persists with metadata: `doc_id`, `document_id`, `filename`, `stored_filename`, `doc_anchor`, `chunk_index`, `chunk_type="content"`, `document_type`, `filetype`.
+  - **$(N+1)^{\text{th}}$ Dedicated Summary Chunk**:
+    - Appends exactly one summary chunk per document: `[DOCUMENT SUMMARY | {doc_anchor}]\n{summary_text}` with `chunk_type="summary"` and ID `{doc_id}_summary`.
+- **Two-Stage Summary Routing Retrieval (`search_with_summary_routing`)**:
+  - **Stage 1 (Summary Routing)**: Queries ChromaDB with `where={"chunk_type": "summary"}` to lock onto WHICH document/entity matches the query (e.g., hits Shubham's summary chunk when asked about Shubham).
+  - **Stage 2 (Scoped Detail Retrieval)**: Pulls granular content chunks scoped to the matched `document_id`.
+  - **Stage 3 (Global Fallback)**: Runs a global search across all chunks to support multi-document comparison questions or queries without direct summary matches.
+- `list_documents()`: Groups chunks by `document_id` and surfaces `doc_anchor`, `document_type`, and chunk count.
+- `delete_document(document_id)`: Removes all chunks associated with a specific document.
+- `get_document_chunks(document_id)`: Retrieves all chunks for a document, safely sorted by `chunk_index`.
 
 ### 4.6 Grounded RAG Engine (`backend/rag.py`)
-- Retrieves top matching chunks via `search()`.
-- **Relevance Filtering (`MAX_DISTANCE = 1.5`)**: Drops chunks whose L2 distance exceeds 1.5 to eliminate irrelevant document pollution.
-- Returns `"No relevant information found in the documents."` if no retrieved chunk satisfies the threshold.
-- Formats context blocks as `[Source N: <doc_type> — <filename>]\n<chunk_text>` and instructs the LLM to answer solely using the provided context and to cite source numbers.
+- Executes **Two-Stage Summary Routing** via `search()`.
+- **Relevance Filtering (`MAX_DISTANCE = 1.5`)**: Drops chunks whose distance exceeds 1.5.
+- **Identity-Aware Context Assembly**: Formats context blocks with explicit entity anchors:
+  `[Source N: {doc_anchor} [{doc_type}] — {filename}]\n{chunk_text}`
+  (or `SUMMARY OVERVIEW: {doc_anchor}` for summary chunks).
+  This eliminates cross-document confusion (e.g., distinguishing an overall 8.14 CGPA from a 9.05 first-semester SGPA).
+- Returns `"No relevant information found in the documents."` if no chunk satisfies the threshold.
+- Prompts the LLM with identity attribution and source citation requirements.
 
 ### 4.7 Compliance Check Engine (`backend/compilance.py`)
 - Compares specifications against vendor submittals across engineering requirements (autonomy, capacity, efficiency, topology, warranty, etc.).

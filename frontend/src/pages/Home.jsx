@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import StatCard from "../components/StatCard";
-import { fetchStats } from "../services/documentsApi";
+import { getStats } from "../api/client";
 
 /**
- * AEGIS AI Workbench Home Overview
- * Autonomous Engineering Governance and Intelligence System
- * Air-gapped on-premises engineering intelligence for confidential EPC & defence infrastructure.
+ * AEGIS AI Home Dashboard (SIH PS ID: 26117)
+ * Air-gapped on-premises intelligence for Refineries, PSUs,
+ * defence manufacturing, and government offices.
  */
 export default function Home() {
   const [stats, setStats] = useState({ total_documents: 0, total_chunks: 0, deviations_found: 0 });
@@ -14,101 +14,74 @@ export default function Home() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetchStats()
-      .then((res) => setStats(res))
+    getStats()
+      .then((res) => setStats(res.data))
       .catch(() => {
-        // Stats fallback
+        // /stats not implemented yet, or backend unreachable
       })
       .finally(() => setLoading(false));
   }, []);
 
   return (
-    <div className="p-6 max-w-6xl mx-auto space-y-6">
-      {/* ── Header & AEGIS AI System Identification ── */}
-      <div className="border border-[#2B3036] bg-[#17191C] rounded p-5">
-        <div className="flex flex-wrap items-center gap-2 mb-3">
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-[11px] font-mono font-medium bg-[#4ADE80]/10 text-[#4ADE80] border border-[#4ADE80]/20">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#4ADE80] animate-pulse" />
-            AEGIS AI Enclave Active
-          </span>
-          <span className="px-2.5 py-0.5 rounded text-[11px] font-mono text-text-secondary bg-[#22262B] border border-[#2B3036]">
-            Confidential EPC • Defence • Critical Infrastructure
-          </span>
-          <span className="px-2.5 py-0.5 rounded text-[11px] font-mono text-[#38BDF8] bg-[#38BDF8]/10 border border-[#38BDF8]/20">
-            100% On-Premises Local Inference
-          </span>
-        </div>
-
-        <div className="flex items-center gap-3 mb-2">
-          <div className="w-8 h-8 rounded bg-gradient-to-br from-[#38BDF8] to-[#0284C7] flex items-center justify-center font-mono font-black text-black text-sm shadow">
-            ⛨
-          </div>
-          <div>
-            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-text-primary">
-              AEGIS AI Workbench
-            </h1>
-            <p className="text-xs font-mono text-[#38BDF8]">
-              Autonomous Engineering Governance and Intelligence System
-            </p>
-          </div>
-        </div>
-
-        <p className="text-text-secondary text-xs leading-relaxed max-w-4xl mt-2">
-          Air-gapped on-premises engineering intelligence platform safeguarding Piping &amp; Instrument Diagrams (P&amp;IDs),
-          technical specifications, vendor equipment submittals, and site correspondence on local GPU hardware —
-          with strict cryptographic boundary isolation and zero external network transmission.
+    <div className="px-4 sm:px-8 py-6 sm:py-8 max-w-5xl mx-auto">
+      <div className="mb-8">
+        <h2
+          className="text-2xl sm:text-3xl font-semibold mb-2 leading-tight"
+          style={{
+            background: "linear-gradient(90deg, rgba(255,255,255,0.95), rgba(255,255,255,0.5))",
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
+          }}
+        >
+          AEGIS AI
+        </h2>
+        <p className="text-text-primary/90 text-sm font-medium mb-2">
+          Autonomous Engineering Governance and Intelligence System
+        </p>
+        <p className="text-text-secondary text-sm leading-relaxed max-w-3xl">
+          Air-gapped on-premises engineering intelligence for Refineries, PSUs, Defence manufacturing, and Government offices.
+          Safeguarding Piping &amp; Instrument Diagrams (P&amp;IDs), technical specifications, vendor negotiations,
+          financials, and internal correspondence on local GPU hardware — with zero external network transmission.
         </p>
       </div>
 
-      {/* ── Headline Technical Metrics ── */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      {/* ── Headline Metrics ── */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
         <StatCard label="Technical Documents Ingested" value={stats.total_documents} index={0} />
         <StatCard label="Chunks in Knowledge Base" value={stats.total_chunks} index={1} />
-        <StatCard label="Compliance Deviations Flagged" value={stats.deviations_found} index={2} />
+        <StatCard label="Deviations & Discrepancies Identified" value={stats.deviations_found} index={2} />
       </div>
 
-      {/* ── Direct Workspace Actions ── */}
-      <div className="border border-[#2B3036] bg-[#17191C] rounded p-5">
-        <h3 className="text-xs font-mono font-bold uppercase tracking-wider text-text-muted mb-3">
-          Core Engineering Operations
-        </h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          <button
-            onClick={() => navigate("/ask")}
-            className="p-3.5 rounded bg-[#1B1E22] border border-[#2B3036] hover:border-[#38BDF8] hover:bg-[#22262B] transition-all text-left group"
-          >
-            <div className="text-base mb-1.5 group-hover:scale-105 transition-transform">💬</div>
-            <div className="font-semibold text-xs text-text-primary mb-1">Ask Documents</div>
-            <div className="text-[11px] text-text-secondary">Grounded RAG Q&amp;A with strict semantic distance citations</div>
-          </button>
-
-          <button
-            onClick={() => navigate("/compliance")}
-            className="p-3.5 rounded bg-[#1B1E22] border border-[#2B3036] hover:border-[#FBBF24] hover:bg-[#22262B] transition-all text-left group"
-          >
-            <div className="text-base mb-1.5 group-hover:scale-105 transition-transform">⚖️</div>
-            <div className="font-semibold text-xs text-text-primary mb-1">Compliance Audit</div>
-            <div className="text-[11px] text-text-secondary">Automated spec vs. vendor submittal comparison matrix</div>
-          </button>
-
-          <button
-            onClick={() => navigate("/documents")}
-            className="p-3.5 rounded bg-[#1B1E22] border border-[#2B3036] hover:border-[#4ADE80] hover:bg-[#22262B] transition-all text-left group"
-          >
-            <div className="text-base mb-1.5 group-hover:scale-105 transition-transform">📁</div>
-            <div className="font-semibold text-xs text-text-primary mb-1">Document Vault</div>
-            <div className="text-[11px] text-text-secondary">Multi-format sandboxed parsing, chunking, and ChromaDB indexing</div>
-          </button>
-
-          <button
-            onClick={() => navigate("/emails")}
-            className="p-3.5 rounded bg-[#1B1E22] border border-[#2B3036] hover:border-[#38BDF8] hover:bg-[#22262B] transition-all text-left group"
-          >
-            <div className="text-base mb-1.5 group-hover:scale-105 transition-transform">✉️</div>
-            <div className="font-semibold text-xs text-text-primary mb-1">Site Correspondence</div>
-            <div className="text-[11px] text-text-secondary">IMAP sync monitoring and on-demand sandbox ingestion</div>
-          </button>
-        </div>
+      {/* ── Quick Action Shortcuts ── */}
+      <div className="flex flex-wrap gap-3">
+        <button
+          onClick={() => navigate("/ask")}
+          className="px-5 py-3 rounded-xl bg-surface border border-border text-text-primary text-sm hover:border-accent/50 hover:bg-surface-2 transition-all flex items-center gap-2"
+        >
+          <span>💬</span>
+          <span>Ask Documents (Air-Gapped RAG) →</span>
+        </button>
+        <button
+          onClick={() => navigate("/compliance")}
+          className="px-5 py-3 rounded-xl bg-surface border border-border text-text-primary text-sm hover:border-accent/50 hover:bg-surface-2 transition-all flex items-center gap-2"
+        >
+          <span>🔍</span>
+          <span>Run Technical Compliance Audit →</span>
+        </button>
+        <button
+          onClick={() => navigate("/emails")}
+          className="px-5 py-3 rounded-xl bg-surface border border-border text-text-primary text-sm hover:border-accent/50 hover:bg-surface-2 transition-all flex items-center gap-2"
+        >
+          <span>✉️</span>
+          <span>Internal Correspondence →</span>
+        </button>
+        <button
+          onClick={() => navigate("/documents")}
+          className="px-5 py-3 rounded-xl bg-surface border border-border text-text-primary text-sm hover:border-accent/50 hover:bg-surface-2 transition-all flex items-center gap-2"
+        >
+          <span>📁</span>
+          <span>Document Vault →</span>
+        </button>
       </div>
     </div>
   );

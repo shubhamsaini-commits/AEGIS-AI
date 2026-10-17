@@ -88,7 +88,23 @@ function SourceChip({ source, index }) {
       </button>
       <div ref={bodyRef} className="overflow-hidden" style={{ height: 0, opacity: 0 }}>
         <div className="mt-1.5 px-3 py-2 rounded-lg bg-surface-2 border border-border-soft text-xs text-text-secondary">
-          <div className="text-text-muted mb-1">{source.filename}</div>
+          <div className="text-text-muted mb-1 flex items-center justify-between gap-2">
+            <span>{source.filename}</span>
+            {source.source_url && (
+              <a
+                href={source.source_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-emerald-400 hover:underline flex items-center gap-1 text-[11px] shrink-0"
+                title={`Open source: ${source.source_url}`}
+              >
+                <span>Original URL</span>
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+              </a>
+            )}
+          </div>
           {source.text}
         </div>
       </div>

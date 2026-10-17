@@ -64,6 +64,7 @@ def ask_ai(prompt: str, system_instruction: str = DEFAULT_SYSTEM_INSTRUCTION, pr
         response.raise_for_status()
         return response.json()["response"]
     else:
+        print(f"[ask_ai] Sending request to local Ollama ({os.getenv('OLLAMA_MODEL', 'qwen2.5:3b')})...")
         response = requests.post(
             "http://localhost:11434/api/generate",
             json={
@@ -71,11 +72,17 @@ def ask_ai(prompt: str, system_instruction: str = DEFAULT_SYSTEM_INSTRUCTION, pr
                 "prompt": prompt,
                 "system": system_instruction,
                 "stream": False,
+                "options": {
+                    "temperature": 0.1,
+                    "num_predict": 1024,
+                },
             },
             timeout=120,
         )
         response.raise_for_status()
-        return response.json()["response"]
+        res_text = response.json()["response"]
+        print(f"[ask_ai] Ollama response received ({len(res_text)} chars).")
+        return res_text
 
 
 def embed_text(text: str) -> list[float]:

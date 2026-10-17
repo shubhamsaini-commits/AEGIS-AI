@@ -4,62 +4,30 @@ export default {
   theme: {
     extend: {
       colors: {
-        canvas: "#111315",
-        surface: "#191C20",
-        "surface-sidebar": "#1B1E22",
-        "surface-activity": "#17191C",
-        "surface-elevated": "#22262B",
-        "surface-hover": "#262B31",
+        canvas: "#0A0A0A",       // main background
+        surface: "#121212",     // elevated cards
+        "surface-2": "#1C1C1C", // more elevated (modals, nested cards)
         border: {
-          DEFAULT: "#2B3036",
-          soft: "#1F2327",
-          active: "#38BDF8",
+          DEFAULT: "rgba(255,255,255,0.08)", // 1px machined-edge border
+          soft: "rgba(255,255,255,0.05)",
         },
         text: {
-          primary: "#E4E7EB",
-          secondary: "#969EA8",
-          muted: "#6B7280",
+          primary: "rgba(255,255,255,0.90)",
+          secondary: "rgba(255,255,255,0.50)",
+          muted: "rgba(255,255,255,0.35)",
         },
         accent: {
-          DEFAULT: "#38BDF8",
-          soft: "rgba(56, 189, 248, 0.12)",
-          hover: "#0284C7",
+          DEFAULT: "#4F46E5",   // muted desaturated indigo (user bubbles, links)
+          soft: "rgba(79,70,229,0.15)",
         },
         status: {
-          match: "#4ADE80",
-          partial: "#FBBF24",
-          fail: "#F87171",
+          match: "#34D399",     // muted neon green
+          partial: "#F59E0B",   // warm amber
+          fail: "#F87171",      // red
         },
       },
-      fontFamily: {
-        sans: [
-          "-apple-system",
-          "BlinkMacSystemFont",
-          '"Segoe UI"',
-          "Roboto",
-          "Oxygen",
-          "Ubuntu",
-          "Cantarell",
-          '"Fira Sans"',
-          '"Droid Sans"',
-          '"Helvetica Neue"',
-          "sans-serif",
-        ],
-        mono: [
-          '"JetBrains Mono"',
-          "ui-monospace",
-          "SFMono-Regular",
-          "Menlo",
-          "Monaco",
-          "Consolas",
-          '"Liberation Mono"',
-          '"Courier New"',
-          "monospace",
-        ],
-      },
       boxShadow: {
-        panel: "0 4px 20px rgba(0, 0, 0, 0.4)",
-        dialog: "0 16px 48px rgba(0, 0, 0, 0.6)",
+        card: "0 24px 60px rgba(0,0,0,0.45), inset 0 1px 1px rgba(255,255,255,0.05)",
       },
     },
   },

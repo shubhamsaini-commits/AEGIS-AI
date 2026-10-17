@@ -4,8 +4,11 @@ import SearchBar from "./SearchBar";
 
 export default function FileTree({
   documents = [],
+  drafts = [],
   activeDocId = null,
+  activeDraftId = null,
   onSelectDocument,
+  onSelectDraft,
   onOpenViewer,
   onAskAbout,
   onDeleteDocument,
@@ -234,8 +237,7 @@ export default function FileTree({
                           onAskAbout={onAskAbout}
                           onDelete={onDeleteDocument}
                         />
-                      ))
-                    )}
+                      ))}
                     </div>
                   )}
                 </div>
@@ -244,7 +246,7 @@ export default function FileTree({
           )}
         </div>
 
-        {/* ── MY NOTES (Task 3 preview / empty state) ── */}
+        {/* ── MY NOTES (Local Drafts) ── */}
         <div>
           <button
             onClick={() => toggleSection("notes")}
@@ -254,17 +256,48 @@ export default function FileTree({
               <span className="text-[10px]">{collapsed.notes ? "▸" : "▾"}</span>
               <span>📝 My Notes</span>
             </span>
-            <span className="text-[10px] font-mono text-text-muted">0</span>
+            <span className="text-[10px] font-mono text-text-muted">{drafts.length}</span>
           </button>
           {!collapsed.notes && (
-            <div className="pl-4 py-1.5 text-[11px] text-text-muted italic border-l border-[#2B3036]/60 ml-2">
-              <span>No local drafts yet. (Available in Task 3)</span>
+            <div className="pl-3 mt-1 space-y-1 border-l border-[#2B3036]/60 ml-2">
+              {drafts.length === 0 ? (
+                <div className="text-[11px] text-text-muted px-2 py-1 italic">
+                  <span>No local notes yet.</span>
+                </div>
+              ) : (
+                drafts.map((d) => (
+                  <div
+                    key={d.id}
+                    onClick={() => onSelectDraft && onSelectDraft(d)}
+                    className={`flex items-center justify-between px-2 py-1.5 rounded cursor-pointer text-xs select-none transition-colors ${
+                      d.id === activeDraftId
+                        ? "bg-[#22262B] text-text-primary border-l-2 border-[#38BDF8]"
+                        : "text-text-secondary hover:bg-[#1E2227] hover:text-text-primary"
+                    }`}
+                  >
+                    <div className="flex items-center gap-1.5 truncate">
+                      <span className="text-[10px] font-mono text-[#FBBF24]">MD</span>
+                      <span className="truncate">{d.title}</span>
+                    </div>
+                    <span
+                      className={`text-[9px] font-mono px-1 rounded uppercase ${
+                        d.status === "ingested"
+                          ? "bg-[#4ADE80]/10 text-[#4ADE80]"
+                          : "bg-[#22262B] text-text-muted"
+                      }`}
+                    >
+                      {d.status === "ingested" ? "✓ Ingested" : "Draft"}
+                    </span>
+                  </div>
+                ))
+              )}
               {onNewNoteClick && (
                 <button
                   onClick={onNewNoteClick}
-                  className="block mt-1 text-[#38BDF8] hover:underline font-normal not-italic"
+                  className="w-full text-left px-2 py-1 text-[11px] text-[#38BDF8] hover:bg-[#22262B] rounded flex items-center gap-1 transition-colors"
                 >
-                  + Create engineering note
+                  <span>+</span>
+                  <span>Create note</span>
                 </button>
               )}
             </div>
@@ -286,7 +319,7 @@ export default function FileTree({
             <div className="pl-4 py-1.5 space-y-1 border-l border-[#2B3036]/60 ml-2 text-[11px]">
               <div className="flex items-center justify-between text-text-muted pr-2">
                 <span>Recent Audit Run</span>
-                <span className="text-[#FBBF24] font-mono">1 Deviation</span>
+                <span className="text-[#FBBF24] font-mono">1 Discrepancy</span>
               </div>
             </div>
           )}

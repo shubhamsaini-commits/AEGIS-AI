@@ -1,61 +1,162 @@
+import axios from "axios";
+
 /**
- * Backward-compatibility proxy for src/services
- * All network operations are now routed through the modular services in src/services/
+ * =============================================================
+ * BACKEND DEVELOPER: READ THIS FILE FIRST
+ * =============================================================
+ * This is the ONLY file in the entire frontend that makes HTTP
+ * calls to FastAPI. Every component below imports functions from
+ * here — none of them use axios/fetch directly. Same principle
+ * as your llm_client.py: one place to change if the API shape
+ * changes, nothing else in the app needs to know.
+ *
+ * Update API_BASE to match wherever uvicorn is running.
+ * CORS: your FastAPI app needs to allow this origin (see the
+ * CORSMiddleware snippet you already have from earlier).
+ * =============================================================
  */
-import apiClient, { ApiError } from "../services/apiClient";
-import {
-  fetchDocuments,
-  uploadDocument as svcUploadDocument,
-  deleteDocument as svcDeleteDocument,
-  getDocumentContent as svcGetDocumentContent,
-  fetchStats,
-} from "../services/documentsApi";
-import {
-  askKnowledgeBase,
-  askImageQuestion as svcAskImageQuestion,
-  agentAsk as svcAgentAsk,
-  agentDeleteConfirmed as svcAgentDeleteConfirmed,
-} from "../services/askApi";
-import {
-  runComplianceAudit,
-  getLastComplianceAudit,
-} from "../services/complianceApi";
-import {
-  fetchEmails,
-  syncEmails as svcSyncEmails,
-  ingestEmail as svcIngestEmail,
-  getEmailStatus as svcGetEmailStatus,
-} from "../services/emailsApi";
 
-export { ApiError };
-export default apiClient;
+const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:8000";
 
-export const askQuestion = (question, documentType = null, provider = "qwen", documentId = null) =>
-  askKnowledgeBase(question, { documentType, provider, documentId });
+const client = axios.create({
+  baseURL: API_BASE,
+  timeout: 30000, // embedding + LLM calls can take a few seconds — don't set this too low
+});
 
-export const askImageQuestion = svcAskImageQuestion;
-export const runComplianceCheck = (documentIds) => runComplianceAudit(documentIds);
-export const getLastComplianceCheck = getLastComplianceAudit;
-export const uploadDocument = svcUploadDocument;
-export const getDocuments = async () => {
-  const docs = await fetchDocuments();
-  return { data: { documents: docs } };
+/**
+ * ---- 1. ASK DOCUMENTS (RAG Q&A) ----
+ * Expected FastAPI endpoint: POST /ask
+ * Request body:  { question: string, document_type?: string | null }
+ * Response body: { answer: string, sources?: [{ filename, document_type, text, distance }] }
+ *
+ * `sources` is optional but strongly recommended — the frontend
+ * renders them as pill-shaped citation chips under each AI message.
+ * If your /ask endpoint currently only returns { answer }, consider
+ * also returning the raw `chunks` you retrieved in rag.py's
+ * ask_with_rag() so the UI can show real citations instead of just text.
+ */
+
+export const askQuestion = (question, documentType = null, provider = "qwen") =>
+  client.post("/ask", { question, document_type: documentType, provider });
+
+export const askImageQuestion = (question, imageFile, documentType = null) => {
+  const formData = new FormData();
+  formData.append("question", question);
+  formData.append("image", imageFile);
+  if (documentType) formData.append("document_type", documentType);
+  return client.post("/ask-image", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+    timeout: 120000,
+  });
 };
-export const getStats = async () => {
-  const stats = await fetchStats();
-  return { data: stats };
+/**
+ * ---- 2. COMPLIANCE CHECK ----
+ * Expected FastAPI endpoint: POST /compliance-check
+ * Request body:  { spec_document?: string, submittal_document?: string }
+ *                (optional — omit to run your default hardcoded UPS check)
+ * Response body: {
+ *   results: [
+ *     {
+ *       requirement: string,
+ *       specified_value: string,
+ *       submitted_value: string,
+ *       status: "Match" | "Deviation" | "Cannot verify",
+ *       severity: "Critical" | "Moderate" | "Low" | null
+ *     }, ...
+ *   ]
+ * }
+ *
+ * The frontend expects `status` to be exactly one of the three
+ * strings above (case-sensitive) since it maps directly to the
+ * green/amber/red status dots.
+ */
+export const runComplianceCheck = (documentIds, auditPrompt = null) =>
+  client.post(
+    "/compliance-check",
+    { document_ids: documentIds, audit_prompt: auditPrompt },
+    { timeout: 180000 } // 3 minutes timeout for local LLM inference
+  );
+
+export const ingestUrl = (url, customTitle = null, scrapeGoal = null) =>
+  client.post("/api/ingest-url", { url, custom_title: customTitle, scrape_goal: scrapeGoal });
+
+export const getLastComplianceCheck = () => client.get("/compliance-check");
+
+/**
+ * ---- 3. DOCUMENT UPLOAD ----
+ * Expected FastAPI endpoint: POST /upload  (multipart/form-data)
+ * Response body: { filename, document_type, chunks_added, status }
+ * On unsupported file type, return { status: "error", message: "..." }
+ * with a 200 (the frontend checks `status`, not just HTTP code —
+ * simplest for a hackathon; a 4xx is also fine if you prefer, just
+ * make sure the catch block below still surfaces `message`).
+ */
+export const uploadDocument = (file, onProgress) => {
+  const formData = new FormData();
+  formData.append("file", file);
+  return client.post("/upload", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+    timeout: 120000, // STEP: 30000 (30s) se badhaakar 120000 (2 min) kiya
+    onUploadProgress: (evt) => {
+      if (onProgress && evt.total) {
+        onProgress(Math.round((evt.loaded / evt.total) * 100));
+      }
+    },
+  });
 };
-export const deleteDocument = svcDeleteDocument;
-export const getEmails = async () => {
-  const emails = await fetchEmails();
-  return { data: { emails } };
-};
-export const syncEmails = svcSyncEmails;
-export const ingestEmail = svcIngestEmail;
-export const getEmailStatus = async () => {
-  const status = await svcGetEmailStatus();
-  return { data: status };
-};
-export const agentAsk = svcAgentAsk;
-export const agentDeleteConfirmed = svcAgentDeleteConfirmed;
-export const getDocumentContent = svcGetDocumentContent;
+
+/**
+ * ---- 4. LIST DOCUMENTS ----
+ * Expected FastAPI endpoint: GET /documents
+ * Response body: {
+ *   documents: [
+ *     { filename, document_type, chunk_count, ingested_at }, ...
+ *   ]
+ * }
+ * Easiest way to build this on your side: query ChromaDB's
+ * collection.get() and group metadata by filename, or just keep
+ * a simple list in a small JSON/SQLite table as you ingest.
+ */
+export const getDocuments = () => client.get("/documents");
+
+/**
+ * ---- 5. DASHBOARD STATS (Home page) ----
+ * Expected FastAPI endpoint: GET /stats
+ * Response body: {
+ *   total_documents: number,
+ *   total_chunks: number,
+ *   deviations_found: number   // from the last compliance check run, or cumulative
+ * }
+ * Cheapest implementation: total_chunks = collection.count() in
+ * ChromaDB, total_documents = distinct filenames in metadata,
+ * deviations_found = count of "Deviation" status from your last
+ * compliance-check result (store it somewhere, even a JSON file).
+ * Don't over-engineer this — a hardcoded/estimated number for the
+ * demo is fine if you're short on time.
+ */
+export const getStats = () => client.get("/stats");
+/**
+ * ---- 6. DELETE DOCUMENT ----
+ * Expected FastAPI endpoint: DELETE /documents/{filename}
+ * Response body: { status: "success", message: "..." }
+ */
+export const deleteDocument = (documentId) =>
+  client.delete(`/documents/${encodeURIComponent(documentId)}`);
+
+/**
+ * ---- 7. EMAIL INTEGRATION ----
+ * GET  /emails           → list all fetched emails (not necessarily ingested)
+ * POST /email/sync       → manually trigger an IMAP sync
+ * POST /email/ingest/:uid → ingest a specific email body + attachments into ChromaDB
+ * GET  /email/status     → last sync time, total fetched/ingested, errors
+ */
+export const getEmails = () => client.get("/emails");
+
+export const syncEmails = () => client.post("/email/sync");
+
+export const ingestEmail = (uid) =>
+  client.post(`/email/ingest/${encodeURIComponent(uid)}`);
+
+export const getEmailStatus = () => client.get("/email/status");
+
+export default client;

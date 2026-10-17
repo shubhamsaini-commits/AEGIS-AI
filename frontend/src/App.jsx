@@ -1,6 +1,5 @@
 import { useRef, useState } from "react";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
-import FileViewer from "./pages/FileViewer";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import { ToastProvider } from "./components/Toast";
@@ -11,10 +10,9 @@ import AskDocuments from "./pages/AskDocuments";
 import ComplianceCheck from "./pages/ComplianceCheck";
 import Documents from "./pages/Documents";
 import Emails from "./pages/Emails";
-import ColdStartBanner from "./components/ColdStartBanner";
 
 const TITLES = {
-  "/": "EPCmind AI Workbench",
+  "/": "AEGIS AI",
   "/ask": "Ask Documents",
   "/compliance": "Compliance Audit",
   "/documents": "Document Vault",
@@ -53,10 +51,9 @@ function Layout() {
           the fixed rail only at lg+ where the sidebar is always visible. */}
       <div className="lg:ml-[17rem]">
         <Navbar
-          title={TITLES[location.pathname] || "EPCmind AI Workbench"}
+          title={TITLES[location.pathname] || "AEGIS AI"}
           onMenuClick={() => setSidebarOpen(true)}
         />
-        <ColdStartBanner />
         <div ref={contentRef}>
           <Routes>
             <Route path="/" element={<Home />} />
@@ -74,7 +71,6 @@ function Layout() {
             <Route path="/compliance" element={<ComplianceCheck />} />
             <Route path="/documents" element={<Documents />} />
             <Route path="/emails" element={<Emails />} />
-            <Route path="/view/:documentId" element={<FileViewer />} />
           </Routes>
         </div>
       </div>

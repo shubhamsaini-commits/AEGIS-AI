@@ -75,8 +75,8 @@ export default function Sidebar({ open, onClose }) {
           <div className="flex items-center gap-2.5">
             <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.7)] shrink-0" />
             <div className="flex flex-col">
-              <span className="text-text-primary font-semibold text-base leading-tight tracking-tight">EPCmind AI</span>
-              <span className="text-[10px] text-emerald-400 font-mono tracking-wider uppercase font-semibold">PS 26117 • Air-Gapped</span>
+              <span className="text-text-primary font-semibold text-base leading-tight tracking-tight">AEGIS AI</span>
+              <span className="text-[10px] text-emerald-400 font-mono tracking-wider uppercase font-semibold">Engineering Intelligence</span>
             </div>
           </div>
           <button onClick={onClose} className="lg:hidden text-text-secondary text-xl leading-none">

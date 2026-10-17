@@ -38,7 +38,7 @@ export default function Navbar() {
                 ref={pillRef}
                 className={`navbar-pill${shrunk ? " navbar-pill--shrunk" : ""}`}
             >
-                <span className="navbar-logo">EPC mind</span>
+                <span className="navbar-logo">AEGIS AI</span>
                 <ul className="navbar-links">
                     {LINKS.map((l) => (
                         <li key={l.href}>

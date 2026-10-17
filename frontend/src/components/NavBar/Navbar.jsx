@@ -10,7 +10,7 @@ const DEFAULT_LINKS = [
   { label: "Emails", to: "/emails" },
 ];
 
-export default function Navbar({ title = "EPCmind AI Workbench", onMenuClick, links = DEFAULT_LINKS }) {
+export default function Navbar({ title = "AEGIS AI", onMenuClick, links = DEFAULT_LINKS }) {
   const [shrunk, setShrunk] = useState(false);
   const pillRef = useRef(null);
 

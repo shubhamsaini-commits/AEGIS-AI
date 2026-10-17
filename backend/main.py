@@ -39,12 +39,13 @@ EMAIL_POLL_INTERVAL = int(os.getenv("EMAIL_POLL_INTERVAL_MINUTES", "5")) * 60
 
 async def _email_poll_loop():
     logger.info("Email poller started (interval=%ds)", EMAIL_POLL_INTERVAL)
+    await asyncio.sleep(5)  # Let server complete startup before polling
     while True:
         try:
-            result = sync_emails()
-            if result["fetched"] > 0:
+            result = await asyncio.to_thread(sync_emails)
+            if result.get("fetched", 0) > 0:
                 logger.info("Email sync: fetched %d new email(s)", result["fetched"])
-            if result["errors"]:
+            if result.get("errors"):
                 logger.warning("Email sync errors: %s", result["errors"])
         except Exception:
             logger.exception("Unhandled error in email poll loop")
@@ -102,27 +103,13 @@ class AskRequest(BaseModel):
 
 @app.post("/ask")
 def ask(req: AskRequest):
-    from rag import MAX_DISTANCE
-    answer = ask_with_rag(
+    answer, sources = ask_with_rag(
         req.question,
         filter_document_type=req.document_type,
         document_id=req.document_id,
         provider=req.provider,
+        return_sources=True,
     )
-
-    sources = []
-    if not req.document_id:
-        chunks = search(req.question, filter_document_type=req.document_type)
-        sources = [
-            {
-                "filename": c["metadata"]["filename"],
-                "document_type": c["metadata"]["document_type"],
-                "text": c["text"],
-                "distance": c["distance"],
-            }
-            for c in chunks if c["distance"] <= MAX_DISTANCE
-        ]
-
     return {"answer": answer, "sources": sources}
 
 
@@ -186,21 +173,12 @@ def agent_ask(req: AgentRequest):
     # Not a delete — treat as a question. If exactly one document was
     # mentioned by name, auto-switch to it (full content, non-destructive).
     document_ids = [d["document_id"] for d in matched] if matched else None
-    answer = ask_with_rag(req.message, document_ids=document_ids, provider=req.provider)
-
-    sources = []
-    if not document_ids:
-        from rag import MAX_DISTANCE
-        chunks = search(req.message)
-        sources = [
-            {
-                "filename": c["metadata"]["filename"],
-                "document_type": c["metadata"]["document_type"],
-                "text": c["text"],
-                "distance": c["distance"],
-            }
-            for c in chunks if c["distance"] <= MAX_DISTANCE
-        ]
+    answer, sources = ask_with_rag(
+        req.message, 
+        document_ids=document_ids, 
+        provider=req.provider,
+        return_sources=True,
+    )
 
     return {
         "type": "answer",
@@ -453,13 +431,126 @@ def remove_document(document_id: str):
 
 class ComplianceRequest(BaseModel):
     document_ids: list[str]
+    audit_prompt: str | None = None
 
 
 @app.post("/compliance-check")
 def compliance_check(req: ComplianceRequest):
-    results = run_compliance_check(req.document_ids)
+    results = run_compliance_check(req.document_ids, audit_prompt=req.audit_prompt)
     data = save_compliance_results(results)
     return data
+
+
+class UrlIngestRequest(BaseModel):
+    url: str
+    custom_title: str | None = None
+    scrape_goal: str | None = None
+
+
+@app.post("/api/ingest-url")
+def tinyfish_smart_ingest(req: UrlIngestRequest):
+    """
+    Bridges external government portals / web notices into private ChromaDB vault.
+    Uses TinyFish API (agent/fetch) with high-speed markdown fallback.
+    """
+    url = req.url.strip()
+    if not url:
+        raise HTTPException(status_code=400, detail="URL is required.")
+
+    extracted_text = ""
+    engine_used = "Standard HTML-to-Markdown"
+    page_title = req.custom_title
+
+    # 1. Try TinyFish if API key is present or SDK is configured
+    tf_api_key = os.getenv("TINYFISH_API_KEY")
+    if tf_api_key:
+        try:
+            from tinyfish import TinyFish
+            tf_client = TinyFish(api_key=tf_api_key)
+
+            if req.scrape_goal and req.scrape_goal.strip():
+                engine_used = "TinyFish Autonomous Web Agent"
+                agent_res = tf_client.agent.run(
+                    url=url,
+                    goal=req.scrape_goal.strip()
+                )
+                extracted_text = json.dumps(agent_res.result, indent=2) if getattr(agent_res, "result", None) else str(agent_res)
+            else:
+                engine_used = "TinyFish Fetch (Markdown Engine)"
+                fetch_res = tf_client.fetch.get_contents(
+                    urls=[url],
+                    format="markdown",
+                    per_url_timeout_ms=30000
+                )
+                if fetch_res.results and len(fetch_res.results) > 0:
+                    page = fetch_res.results[0]
+                    extracted_text = getattr(page, "text", "") or str(page)
+                    if not page_title:
+                        page_title = getattr(page, "title", None)
+        except Exception as e:
+            logger.warning(f"[TinyFish Error] {e}. Falling back to basic request.")
+
+    # 2. Resilient fallback if TinyFish key is unset or error occurred
+    if not extracted_text.strip():
+        try:
+            import html2text
+            headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
+            resp = requests.get(url, headers=headers, timeout=20)
+            resp.raise_for_status()
+
+            m_title = re.search(r'<title[^>]*>(.*?)</title>', resp.text, re.IGNORECASE | re.DOTALL)
+            if m_title and not page_title:
+                page_title = m_title.group(1).strip()
+
+            h = html2text.HTML2Text()
+            h.ignore_links = False
+            h.ignore_images = True
+            extracted_text = h.handle(resp.text)
+            engine_used = "Built-in HTML-to-Markdown Parser"
+        except Exception as e:
+            logger.error(f"[URL Fetch Error] {e}")
+            raise HTTPException(status_code=500, detail=f"Failed to fetch content from URL: {str(e)}")
+
+    if not extracted_text.strip():
+        raise HTTPException(status_code=400, detail="Extracted webpage content is empty.")
+
+    if not page_title:
+        clean_slug = re.sub(r'https?://(www\.)?', '', url).split('/')[0]
+        page_title = f"{clean_slug} Notice"
+
+    clean_filename = f"GOVT_NOTICE: {page_title[:45]}" if ("gov" in url or "fssai" in url or "aicte" in url or "ugc" in url) else page_title[:50]
+    doc_id = str(uuid.uuid4())
+
+    # Chunk the markdown text into ~1000 character segments
+    chunk_size, overlap = 1000, 150
+    chunks_to_ingest = []
+    for i in range(0, len(extracted_text), chunk_size - overlap):
+        sub = extracted_text[i : i + chunk_size].strip()
+        if len(sub) > 30:
+            chunks_to_ingest.append({
+                "text": sub,
+                "filename": clean_filename,
+                "document_type": "Government Notice" if "GOVT_NOTICE" in clean_filename else "Web Notice",
+                "doc_id": doc_id,
+                "document_id": doc_id,
+                "source_url": url,
+                "filetype": "web",
+            })
+
+    if not chunks_to_ingest:
+        raise HTTPException(status_code=400, detail="Content was too short to create document chunks.")
+
+    # Ingest into ChromaDB using N+1 Hierarchical Summary pipeline
+    add_chunks(chunks_to_ingest)
+
+    return {
+        "status": "success",
+        "engine_used": engine_used,
+        "filename": clean_filename,
+        "document_id": doc_id,
+        "source_url": url,
+        "chunks_added": len(chunks_to_ingest) + 1
+    }
 
 
 @app.get("/compliance-check")
@@ -471,7 +562,7 @@ def get_last_compliance_check():
 def stats():
     doc_data = get_stats()
     compliance_data = load_compliance_results()
-    deviations = sum(1 for r in compliance_data["results"] if r.get("status") == "Deviation")
+    deviations = sum(1 for r in compliance_data.get("results", []) if r.get("status") in ("Deviation", "Discrepancy", "Conflict", "Mismatch"))
     return {
         "total_documents": doc_data["total_documents"],
         "total_chunks": doc_data["total_chunks"],

@@ -161,7 +161,7 @@ export default function Emails() {
         <div>
           <h2 className="text-xl font-medium text-text-primary">Internal Communications &amp; Correspondence</h2>
           <p className="text-sm text-text-muted mt-0.5">
-            Fetch internal site correspondence, vendor negotiations, and RFIs from on-premises mailboxes and selectively ingest them into the EPCmind knowledge base.
+            Fetch internal site correspondence, vendor negotiations, and RFIs from on-premises mailboxes and selectively ingest them into the sovereign knowledge base.
           </p>
         </div>
         <button

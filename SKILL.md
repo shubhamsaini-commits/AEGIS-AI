@@ -28,11 +28,11 @@ EPCmind resolves engineering information fragmentation across data centre EPC de
 
 - **[backend/](file:///c:/Users/shubh/Desktop/SIH%20pro/EPCmind/backend)**: Python 3.10+ FastAPI service.
   - [main.py](file:///c:/Users/shubh/Desktop/SIH%20pro/EPCmind/backend/main.py): REST endpoints (`/ask`, `/documents`, `/upload`, `/compliance-check`, `/stats`, `/emails`, `/email/sync`, `/email/ingest/{uid}`, `/email/status`) and background email poller.
-  - [rag.py](file:///c:/Users/shubh/Desktop/SIH%20pro/EPCmind/backend/rag.py): Grounded RAG prompt assembly with semantic distance filtering (`MAX_DISTANCE = 1.5`).
+  - [rag.py](file:///c:/Users/shubh/Desktop/SIH%20pro/EPCmind/backend/rag.py): Grounded RAG prompt assembly with Two-Stage Summary Routing, entity anchor headers, and semantic distance filtering (`MAX_DISTANCE = 1.5`).
   - [compilance.py](file:///c:/Users/shubh/Desktop/SIH%20pro/EPCmind/backend/compilance.py): Specification vs. Submittal compliance audit engine and JSON caching.
   - [email_ingest.py](file:///c:/Users/shubh/Desktop/SIH%20pro/EPCmind/backend/email_ingest.py): Gmail IMAP fetching, email store management (`email_store.json`), and sandboxed attachment ingestion.
   - [sandbox_check.py](file:///c:/Users/shubh/Desktop/SIH%20pro/EPCmind/backend/sandbox_check.py): Isolated security validation (magic-byte signature validation and zip-bomb guards).
-  - [vector_store.py](file:///c:/Users/shubh/Desktop/SIH%20pro/EPCmind/backend/vector_store.py): ChromaDB client (`./chroma_db`), embedding indexing, metadata tracking, and vector search.
+  - [vector_store.py](file:///c:/Users/shubh/Desktop/SIH%20pro/EPCmind/backend/vector_store.py): ChromaDB client (`./chroma_db`), 1-Summary-Chunk per document generation (`qwen2.5:3b`), `doc_anchor` contextualization, and Two-Stage Summary Routing (`search_with_summary_routing`).
   - [chunker.py](file:///c:/Users/shubh/Desktop/SIH%20pro/EPCmind/backend/chunker.py): Title-preserving, table-safe section chunking and document classification (including `Email`).
   - [exctractors.py](file:///c:/Users/shubh/Desktop/SIH%20pro/EPCmind/backend/exctractors.py): Universal document extraction for Word, PDF, Excel, and plain text.
   - [llm_api_provider.py](file:///c:/Users/shubh/Desktop/SIH%20pro/EPCmind/backend/llm_api_provider.py): Dual-mode LLM router (Colab/ngrok Qwen or local Ollama `qwen2.5:3b`) and local `all-MiniLM-L6-v2` embeddings with CUDA auto-detection.

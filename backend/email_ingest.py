@@ -30,6 +30,7 @@ from datetime import datetime, timezone
 from typing import Optional
 
 import html2text
+from dotenv import load_dotenv
 
 from chunker import chunk_document
 from vector_store import add_chunks
@@ -39,6 +40,7 @@ logger = logging.getLogger(__name__)
 # ── paths ────────────────────────────────────────────────────────────────────
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 STORE_PATH = os.path.join(BASE_DIR, "email_store.json")
+load_dotenv(os.path.join(BASE_DIR, ".env"))
 
 # ── defaults (overridden via .env) ───────────────────────────────────────────
 IMAP_HOST = os.getenv("IMAP_HOST", "imap.gmail.com")

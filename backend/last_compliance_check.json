@@ -1,4 +1,85 @@
 {
-  "results": [],
-  "ran_at": "2026-09-25T07:59:39.883421"
+  "results": [
+    {
+      "requirement": "Boric acid",
+      "doc1_name": "Public Notice: Prohibition of Certain Food Ingredi",
+      "doc1_type": "Web Notice",
+      "doc1_value": "The substances listed in this notice are harmful to human health. Their use as an ingredient or additive in any food or beverage sold in the country is prohibited from 1 January 2027.",
+      "doc1_url": "https://elegant-faun-4c1a1a.netlify.app",
+      "doc2_name": "Nova_Foods_Secret_Recipe_Dossier.docx",
+      "doc2_type": "DOCX",
+      "doc2_value": "Boric acid | SR-001, SR-002 | Preservative | Approved 1998 as heritage recipe item",
+      "doc2_url": "",
+      "specified_value": "The substances listed in this notice are harmful to human health. Their use as an ingredient or additive in any food or beverage sold in the country is prohibited from 1 January 2027.",
+      "submitted_value": "Boric acid | SR-001, SR-002 | Preservative | Approved 1998 as heritage recipe item",
+      "status": "Discrepancy",
+      "severity": "Critical",
+      "comparison_type": "comparison"
+    },
+    {
+      "requirement": "Cyclamates",
+      "doc1_name": "Public Notice: Prohibition of Certain Food Ingredi",
+      "doc1_type": "Web Notice",
+      "doc1_value": "The substances listed in this notice are harmful to human health. Their use as an ingredient or additive in any food or beverage sold in the country is prohibited from 1 January 2027.",
+      "doc1_url": "https://elegant-faun-4c1a1a.netlify.app",
+      "doc2_name": "Nova_Foods_Secret_Recipe_Dossier.docx",
+      "doc2_type": "DOCX",
+      "doc2_value": "Sodium cyclamate | SR-001, SR-004 | Sweetener | Approved 2002, not re-reviewed",
+      "doc2_url": "",
+      "specified_value": "The substances listed in this notice are harmful to human health. Their use as an ingredient or additive in any food or beverage sold in the country is prohibited from 1 January 2027.",
+      "submitted_value": "Sodium cyclamate | SR-001, SR-004 | Sweetener | Approved 2002, not re-reviewed",
+      "status": "Discrepancy",
+      "severity": "Critical",
+      "comparison_type": "comparison"
+    },
+    {
+      "requirement": "Safrole",
+      "doc1_name": "Public Notice: Prohibition of Certain Food Ingredi",
+      "doc1_type": "Web Notice",
+      "doc1_value": "The substances listed in this notice are harmful to human health. Their use as an ingredient or additive in any food or beverage sold in the country is prohibited from 1 January 2027.",
+      "doc1_url": "https://elegant-faun-4c1a1a.netlify.app",
+      "doc2_name": "Nova_Foods_Secret_Recipe_Dossier.docx",
+      "doc2_type": "DOCX",
+      "doc2_value": "Safrole (in sassafras extract) | SR-001 | Flavouring | Approved at launch, natural origin",
+      "doc2_url": "",
+      "specified_value": "The substances listed in this notice are harmful to human health. Their use as an ingredient or additive in any food or beverage sold in the country is prohibited from 1 January 2027.",
+      "submitted_value": "Safrole (in sassafras extract) | SR-001 | Flavouring | Approved at launch, natural origin",
+      "status": "Discrepancy",
+      "severity": "Critical",
+      "comparison_type": "comparison"
+    },
+    {
+      "requirement": "Alkannin (INS 103)",
+      "doc1_name": "Public Notice: Prohibition of Certain Food Ingredi",
+      "doc1_type": "Web Notice",
+      "doc1_value": "The substances listed in this notice are harmful to human health. Their use as an ingredient or additive in any food or beverage sold in the country is prohibited from 1 January 2027.",
+      "doc1_url": "https://elegant-faun-4c1a1a.netlify.app",
+      "doc2_name": "Nova_Foods_Secret_Recipe_Dossier.docx",
+      "doc2_type": "DOCX",
+      "doc2_value": "Alkannin (INS 103) | SR-001, SR-002 | Colouring | Approved 2010, exported to several regions",
+      "doc2_url": "",
+      "specified_value": "The substances listed in this notice are harmful to human health. Their use as an ingredient or additive in any food or beverage sold in the country is prohibited from 1 January 2027.",
+      "submitted_value": "Alkannin (INS 103) | SR-001, SR-002 | Colouring | Approved 2010, exported to several regions",
+      "status": "Discrepancy",
+      "severity": "Critical",
+      "comparison_type": "comparison"
+    },
+    {
+      "requirement": "Phthalates (lid gasket)",
+      "doc1_name": "Public Notice: Prohibition of Certain Food Ingredi",
+      "doc1_type": "Web Notice",
+      "doc1_value": "The substances listed in this notice are harmful to human health. Their use as an ingredient or additive in any food or beverage sold in the country is prohibited from 1 January 2027.",
+      "doc1_url": "https://elegant-faun-4c1a1a.netlify.app",
+      "doc2_name": "Nova_Foods_Secret_Recipe_Dossier.docx",
+      "doc2_type": "DOCX",
+      "doc2_value": "Phthalates (lid gasket) | SR-002 | Indirect additive | Packaging supplier certificate on file",
+      "doc2_url": "",
+      "specified_value": "The substances listed in this notice are harmful to human health. Their use as an ingredient or additive in any food or beverage sold in the country is prohibited from 1 January 2027.",
+      "submitted_value": "Phthalates (lid gasket) | SR-002 | Indirect additive | Packaging supplier certificate on file",
+      "status": "Discrepancy",
+      "severity": "Critical",
+      "comparison_type": "comparison"
+    }
+  ],
+  "ran_at": "2026-10-18T01:35:36.984205"
 }

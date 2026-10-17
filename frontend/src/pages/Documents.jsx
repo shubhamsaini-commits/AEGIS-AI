@@ -5,34 +5,13 @@ import UploadDropzone from "../components/UploadDropzone";
 import DocumentBadge from "../components/DocumentBadge";
 import EmptyState from "../components/EmptyState";
 import Modal from "../components/Modal";
-import { getDocuments, deleteDocument, agentDeleteConfirmed, getDocumentContent } from "../api/client";
+import { getDocuments, deleteDocument } from "../api/client";
 import { useToast } from "../components/Toast";
 
 export default function Documents() {
   const [docs, setDocs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [deleteTarget, setDeleteTarget] = useState(null);
-  const [selectedIds, setSelectedIds] = useState(new Set());
-  const [bulkConfirm, setBulkConfirm] = useState(false);
-  const [viewDoc, setViewDoc] = useState(null);
-  const [viewContent, setViewContent] = useState("");
-
-  const toggleSelect = (id) => setSelectedIds((prev) => {
-    const next = new Set(prev);
-    next.has(id) ? next.delete(id) : next.add(id);
-    return next;
-  });
-  const openDoc = (doc) => {
-    window.open(`/view/${doc.document_id}`, "_blank", "width=900,height=950");
-  };
-  // const openDoc = async (doc) => {
-  //   setViewDoc(doc);
-  //   setViewContent("Loading…");
-  //   try {
-  //     const res = await getDocumentContent(doc.document_id);
-  //     setViewContent(res.data.text);
-  //   } catch { setViewContent("Couldn't load this document."); }
-  // };
   const tableRef = useRef(null);
   const toast = useToast();
 
@@ -63,12 +42,6 @@ export default function Documents() {
       </div>
 
       <UploadDropzone onUploaded={handleUploaded} />
-      {selectedIds.size > 0 && (
-        <div className="flex items-center justify-between mt-4 px-3 py-2 bg-surface border border-border rounded-xl">
-          <span className="text-xs text-text-secondary">{selectedIds.size} selected</span>
-          <button onClick={() => setBulkConfirm(true)} className="text-xs text-status-fail">Delete selected</button>
-          </div>
-        )}
 
       <div ref={tableRef} className="mt-8">
         {!loading && docs.length === 0 && (
@@ -84,7 +57,6 @@ export default function Documents() {
           <table className="w-full min-w-[480px]">
             <thead>
               <tr className="text-left text-xs text-text-muted border-b border-border-soft">
-                <th className="pb-3 font-normal"></th>
                 <th className="pb-3 font-normal">Filename</th>
                 <th className="pb-3 font-normal">Type</th>
                 <th className="pb-3 font-normal">Chunks</th>
@@ -93,14 +65,7 @@ export default function Documents() {
             </thead>
             <tbody>
               {docs.map((doc) => (
-                <DocRow
-                key={doc.document_id}
-                doc={doc}
-                onDelete={() => setDeleteTarget(doc)}
-                selected={selectedIds.has(doc.document_id)}
-                onToggleSelect={toggleSelect}
-                onOpen={openDoc}
-                />
+                <DocRow key={doc.document_id} doc={doc} onDelete={() => setDeleteTarget(doc)} />
               ))}
             </tbody>
           </table>
@@ -127,35 +92,11 @@ export default function Documents() {
         This will remove <strong>{deleteTarget?.filename}</strong> and its chunks from the
         knowledge base.
       </Modal>
-      <Modal
-  open={bulkConfirm}
-  title="Remove selected documents?"
-  onClose={() => setBulkConfirm(false)}
-  confirmLabel="Remove"
-  onConfirm={async () => {
-    const ids = [...selectedIds];
-    try {
-      await agentDeleteConfirmed(ids);
-      setDocs((prev) => prev.filter((d) => !selectedIds.has(d.document_id)));
-      toast?.show(`${ids.length} document(s) removed`);
-    } catch { toast?.show("Failed to remove documents", "error"); }
-    finally { setSelectedIds(new Set()); setBulkConfirm(false); }
-  }}
->
-  Removing {selectedIds.size} document(s):
-  <ul className="mt-2 text-xs list-disc pl-4">
-    {docs.filter((d) => selectedIds.has(d.document_id)).map((d) => <li key={d.document_id}>{d.filename}</li>)}
-  </ul>
-</Modal>
-
-<Modal open={!!viewDoc} title={viewDoc?.filename} onClose={() => setViewDoc(null)} confirmLabel="Close" onConfirm={() => setViewDoc(null)}>
-  <pre className="whitespace-pre-wrap text-xs max-h-[60vh] overflow-y-auto">{viewContent}</pre>
-</Modal>
     </div>
   );
 }
 
-function DocRow({ doc, onDelete, selected, onToggleSelect, onOpen }) {
+function DocRow({ doc, onDelete }) {
   const rowRef = useRef(null);
 
   useGSAP(
@@ -172,8 +113,34 @@ function DocRow({ doc, onDelete, selected, onToggleSelect, onOpen }) {
 
   return (
     <tr ref={rowRef} className="border-b border-border-soft/60 text-sm">
-      <td className="py-3.5"><input type="checkbox" checked={selected} onChange={() => onToggleSelect(doc.document_id)} /></td>
-      <td className="py-3.5 text-text-primary cursor-pointer hover:underline" onClick={() => onOpen(doc)}>{doc.filename}</td>
+      <td className="py-3.5 text-text-primary">
+        {doc.source_url ? (
+          <a
+            href={doc.source_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-emerald-400 underline underline-offset-2 flex items-center gap-1.5 group transition-colors font-medium inline-flex"
+            title={`Open original web source: ${doc.source_url}`}
+          >
+            <span>{doc.filename}</span>
+            <svg
+              className="w-3.5 h-3.5 opacity-60 group-hover:opacity-100 transition-opacity text-emerald-400 shrink-0"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+              />
+            </svg>
+          </a>
+        ) : (
+          <span>{doc.filename}</span>
+        )}
+      </td>
       <td className="py-3.5">
         <DocumentBadge type={doc.document_type} />
       </td>

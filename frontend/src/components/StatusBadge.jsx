@@ -10,10 +10,10 @@ export default function StatusBadge({
   let styles = "bg-[#22262B] text-text-secondary border-[#2B3036]";
   let icon = "•";
 
-  if (norm === "match" || norm === "success" || norm === "ready" || norm === "online") {
+  if (norm === "match" || norm === "success" || norm === "ready" || norm === "online" || norm === "consistent") {
     styles = "bg-[#4ADE80]/10 text-[#4ADE80] border-[#4ADE80]/20";
     icon = "✓";
-  } else if (norm === "deviation" || norm === "critical" || norm === "fail" || norm === "error") {
+  } else if (norm === "deviation" || norm === "discrepancy" || norm === "conflict" || norm === "mismatch" || norm === "critical" || norm === "fail" || norm === "error") {
     styles = "bg-[#F87171]/10 text-[#F87171] border-[#F87171]/20";
     icon = "✕";
   } else if (norm === "moderate" || norm === "warning" || norm === "cannot verify" || norm === "pending") {
