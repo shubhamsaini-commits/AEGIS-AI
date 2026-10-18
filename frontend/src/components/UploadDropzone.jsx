@@ -84,7 +84,7 @@ export default function UploadDropzone({ onUploaded }) {
       <input
         id="doc-upload-input"
         type="file"
-        accept=".pdf,.docx,.xlsx,.xls,.csv,.txt"
+        accept=".pdf,.docx,.xlsx,.xls,.csv,.txt,.zip"
         className="hidden"
         onChange={onSelect}
       />
@@ -95,7 +95,7 @@ export default function UploadDropzone({ onUploaded }) {
             Drag & drop a document, or click to browse
           </p>
           <p className="text-text-muted text-xs mt-1">
-            PDF, DOCX, XLSX, CSV, TXT supported
+            PDF, DOCX, XLSX, CSV, Zip, TXT supported
           </p>
         </>
       ) : (
