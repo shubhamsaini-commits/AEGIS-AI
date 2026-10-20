@@ -66,6 +66,67 @@
 
 ---
 
+## 🐟 TinyFish Web Intelligence Integration
+
+AEGIS AI uses **TinyFish** as an optional web-ingestion engine for bringing
+external government notices, regulatory pages, and other web resources into
+the private document knowledge base. This gives the platform a bridge to
+live web content without making the rest of the RAG pipeline dependent on a
+cloud service.
+
+### How it works
+
+1. A user pastes a URL in the frontend's **Bridge External Govt / Regulatory
+   URL** flow. The frontend sends the URL to the FastAPI
+   `POST /api/ingest-url` endpoint through `frontend/src/api/client.js`.
+2. The backend checks for `TINYFISH_API_KEY` and initializes the TinyFish
+   Python client when the key is configured.
+3. TinyFish uses one of two extraction modes:
+   - **Autonomous Web Agent** — selected when the request includes a
+     `scrape_goal`; TinyFish navigates the page and returns the result for a
+     specific goal.
+   - **Fetch / Markdown** — used for normal URL ingestion; TinyFish converts
+     the page into Markdown while retaining readable page content and title
+     metadata.
+4. The extracted content is split into overlapping chunks, tagged with the
+   original `source_url`, and added to the same ChromaDB collection as
+   uploaded documents.
+5. The resulting web notice can therefore be retrieved by grounded RAG and
+   used in compliance comparisons, with a link back to the live source.
+
+The integration is deliberately resilient. If the TinyFish key is missing,
+the SDK is unavailable, or a TinyFish request fails, the backend falls back
+to its built-in HTML-to-Markdown parser using `requests` and `html2text`.
+This keeps URL ingestion usable in local or air-gapped development
+environments, while TinyFish provides stronger handling for pages that need
+agent-style navigation or targeted extraction.
+
+### Configuration
+
+TinyFish is optional. To enable it, install the TinyFish Python SDK in the
+backend environment and add the API key to `backend/.env`:
+
+```env
+TINYFISH_API_KEY=your_tinyfish_api_key
+```
+
+The endpoint accepts the following JSON request:
+
+```json
+{
+  "url": "https://example.gov/notice",
+  "custom_title": "Optional title",
+  "scrape_goal": "Optional goal for targeted extraction"
+}
+```
+
+The response reports the selected engine, generated document ID, source URL,
+and number of chunks added. TinyFish never replaces the local indexing and
+retrieval layers; it only supplies web content to the existing ingestion
+pipeline.
+
+---
+
 ## 🚀 Quick Setup Guide
 
 ### 1. Prerequisites
@@ -129,6 +190,9 @@ Create or edit `backend/.env` if you wish to configure live email polling or clo
 
 # Optional: Gemini API Key for hybrid cloud mode
 # GEMINI_API_KEY=your_key_here
+
+# Optional: TinyFish web-ingestion engine
+# TINYFISH_API_KEY=your_tinyfish_api_key
 
 # Optional: Gmail / IMAP stream sync
 EMAIL_ADDRESS=your_email@gmail.com
