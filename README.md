@@ -215,6 +215,6 @@ EMAIL_POLL_INTERVAL_MINUTES=5
 
 <div align="center">
 
-Built with ⚡ for **Devlympics** • Sovereign AI Engineering
+Built with obsession 🔥 • Sovereign AI Engineering
 
 </div>
